@@ -170,6 +170,11 @@ class DashboardController extends Controller
             'total_receipts' => $total_receipts,
             'total_expenses' => $total_expenses,
             'total_net_income' => $total_net_income,
+
+            'date_range' => [
+                'from_date' => $startDate->format('Y-m-d'),
+                'to_date' => $start->format('Y-m-d'),
+            ],
         ]);
     }
 }

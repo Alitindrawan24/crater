@@ -34,6 +34,14 @@ export const useDashboardStore = (useWindow = false) => {
       recentDueInvoices: [],
       recentEstimates: [],
 
+      dateRange: { from_date: null, to_date: null },
+
+      invoices: [],
+      invoicePagination: { currentPage: 1, totalPages: 1, totalCount: 0, limit: 10 },
+
+      payments: [],
+      paymentPagination: { currentPage: 1, totalPages: 1, totalCount: 0, limit: 10 },
+
       isDashboardDataLoaded: false,
     }),
 
@@ -72,8 +80,68 @@ export const useDashboardStore = (useWindow = false) => {
               this.recentDueInvoices = response.data.recent_due_invoices
               this.recentEstimates = response.data.recent_estimates
 
+              this.dateRange = response.data.date_range || { from_date: null, to_date: null }
+
               this.isDashboardDataLoaded = true
 
+              resolve(response)
+            })
+            .catch((err) => {
+              handleError(err)
+              reject(err)
+            })
+        })
+      },
+
+      fetchDashboardInvoices(page = 1) {
+        return new Promise((resolve, reject) => {
+          axios
+            .get('/api/v1/invoices', {
+              params: {
+                from_date: this.dateRange.from_date,
+                to_date: this.dateRange.to_date,
+                limit: 10,
+                page,
+              },
+            })
+            .then((response) => {
+              this.invoices = response.data.data
+              const meta = response.data.meta
+              this.invoicePagination = {
+                currentPage: response.data.meta?.current_page ?? page,
+                totalPages: response.data.meta?.last_page ?? 1,
+                totalCount: meta?.total ?? 0,
+                limit: 10,
+              }
+              resolve(response)
+            })
+            .catch((err) => {
+              handleError(err)
+              reject(err)
+            })
+        })
+      },
+
+      fetchDashboardPayments(page = 1) {
+        return new Promise((resolve, reject) => {
+          axios
+            .get('/api/v1/payments', {
+              params: {
+                from_date: this.dateRange.from_date,
+                to_date: this.dateRange.to_date,
+                limit: 10,
+                page,
+              },
+            })
+            .then((response) => {
+              this.payments = response.data.data
+              const meta = response.data.meta
+              this.paymentPagination = {
+                currentPage: response.data.meta?.current_page ?? page,
+                totalPages: response.data.meta?.last_page ?? 1,
+                totalCount: meta?.total ?? 0,
+                limit: 10,
+              }
               resolve(response)
             })
             .catch((err) => {

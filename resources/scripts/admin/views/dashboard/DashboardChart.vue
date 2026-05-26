@@ -159,6 +159,8 @@ import ChartPlaceholder from './DashboardChartPlaceholder.vue'
 import abilities from '@/scripts/admin/stub/abilities'
 import { useUserStore } from '@/scripts/admin/stores/user'
 
+const emit = defineEmits(['filterChanged'])
+
 const dashboardStore = useDashboardStore()
 const companyStore = useCompanyStore()
 
@@ -200,6 +202,7 @@ watch(
 async function loadData(params) {
   if (userStore.hasAbilities(abilities.DASHBOARD)) {
     await dashboardStore.loadData(params)
+    emit('filterChanged')
   }
 }
 </script>
