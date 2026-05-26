@@ -56,6 +56,15 @@ class DashboardController extends Controller
             $startDate->subYear()->startOfMonth();
             $start->subYear()->startOfMonth();
             $end->subYear()->endOfMonth();
+        } elseif ($request->has('year')) {
+            $year = (int) $request->input('year');
+            $startDate = Carbon::createFromDate($year, $terms[0], 1)->startOfMonth();
+            $start = $startDate->copy();
+            $end = $startDate->copy()->endOfMonth();
+        } elseif ($request->has('last_12_months')) {
+            $startDate = Carbon::now()->subMonths(11)->startOfMonth();
+            $start = $startDate->copy();
+            $end = $startDate->copy()->endOfMonth();
         }
 
         while ($monthCounter < 12) {

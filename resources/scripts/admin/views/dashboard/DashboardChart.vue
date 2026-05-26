@@ -30,6 +30,8 @@
               :show-labels="false"
               :placeholder="$t('dashboard.select_year')"
               :can-deselect="false"
+              label="label"
+              track-by="value"
             />
           </div>
         </div>
@@ -149,7 +151,7 @@
 </template>
 
 <script setup>
-import { ref, watch, inject } from 'vue'
+import { ref, watch, inject, computed } from 'vue'
 import { useDashboardStore } from '@/scripts/admin/stores/dashboard'
 import { useCompanyStore } from '@/scripts/admin/stores/company'
 import LineChart from '@/scripts/admin/components/charts/LineChart.vue'
@@ -162,15 +164,32 @@ const companyStore = useCompanyStore()
 
 const utils = inject('utils')
 const userStore = useUserStore()
-const years = ref(['This year', 'Previous year'])
-const selectedYear = ref('This year')
+
+const currentYear = new Date().getFullYear()
+const specificYears = Array.from({ length: 5 }, (_, i) => ({
+  label: String(currentYear - i),
+  value: String(currentYear - i),
+}))
+
+const years = ref([
+  { label: 'This Year', value: 'this_year' },
+  { label: 'Previous Year', value: 'previous_year' },
+  { label: 'Last 12 Months', value: 'last_12_months' },
+  ...specificYears,
+])
+
+const selectedYear = ref(years.value[0])
 
 watch(
   selectedYear,
   (val) => {
-    if (val === 'Previous year') {
-      let params = { previous_year: true }
-      loadData(params)
+    const v = val?.value ?? val
+    if (v === 'previous_year') {
+      loadData({ previous_year: true })
+    } else if (v === 'last_12_months') {
+      loadData({ last_12_months: true })
+    } else if (v !== 'this_year') {
+      loadData({ year: v })
     } else {
       loadData()
     }
