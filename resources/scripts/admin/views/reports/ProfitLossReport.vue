@@ -136,6 +136,10 @@ const dateRange = reactive([
     key: 'Previous Year',
   },
   {
+    label: t('dateRange.all_time'),
+    key: 'All Time',
+  },
+  {
     label: t('dateRange.custom'),
     key: 'Custom',
   },

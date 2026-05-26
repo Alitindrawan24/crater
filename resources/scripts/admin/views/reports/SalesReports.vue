@@ -150,6 +150,10 @@ const dateRange = reactive([
     key: 'Previous Year',
   },
   {
+    label: t('dateRange.all_time'),
+    key: 'All Time',
+  },
+  {
     label: t('dateRange.custom'),
     key: 'Custom',
   },
@@ -250,6 +254,10 @@ function onChangeDateRange() {
     case 'Previous Year':
       formData.from_date = getPreDate('startOf', 'year')
       formData.to_date = getPreDate('endOf', 'year')
+      break
+    case 'All Time':
+      formData.from_date = '2000-01-01'
+      formData.to_date = moment().format('YYYY-MM-DD')
       break
     default:
       break
