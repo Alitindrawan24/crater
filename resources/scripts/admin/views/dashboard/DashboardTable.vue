@@ -100,17 +100,88 @@
         </BaseTable>
       </div>
     </div>
+
+    <!-- Invoices by Period -->
+    <div
+      v-if="userStore.hasAbilities(abilities.VIEW_INVOICE)"
+      class="mt-10"
+    >
+      <div class="relative z-10 flex items-center justify-between mb-3">
+        <h6 class="mb-0 text-xl font-semibold leading-normal">
+          {{ $t('dashboard.recent_invoices_card.title') }} ({{ periodLabel }})
+        </h6>
+        <BaseButton size="sm" variant="primary-outline" @click="$router.push('/admin/invoices')">
+          {{ $t('dashboard.recent_invoices_card.view_all') }}
+        </BaseButton>
+      </div>
+      <BaseTable
+        :data="dashboardStore.invoices"
+        :columns="periodInvoiceColumns"
+        :loading="invoicesLoading"
+      >
+        <template #cell-customer="{ row }">
+          <router-link :to="{ path: `invoices/${row.data.id}/view` }" class="font-medium text-primary-500">
+            {{ row.data.customer.name }}
+          </router-link>
+        </template>
+        <template #cell-total="{ row }">
+          <BaseFormatMoney :amount="row.data.total" :currency="row.data.customer.currency" />
+        </template>
+        <template #cell-status="{ row }">
+          <BasePaidStatusBadge :status="row.data.status" />
+        </template>
+      </BaseTable>
+      <BaseTablePagination
+        :pagination="dashboardStore.invoicePagination"
+        @pageChange="loadInvoicePage"
+      />
+    </div>
+
+    <!-- Payments by Period -->
+    <div
+      v-if="userStore.hasAbilities(abilities.VIEW_PAYMENT)"
+      class="mt-10"
+    >
+      <div class="relative z-10 flex items-center justify-between mb-3">
+        <h6 class="mb-0 text-xl font-semibold leading-normal">
+          {{ $t('payments.title') }} ({{ periodLabel }})
+        </h6>
+        <BaseButton size="sm" variant="primary-outline" @click="$router.push('/admin/payments')">
+          {{ $t('general.view_all') }}
+        </BaseButton>
+      </div>
+      <BaseTable
+        :data="dashboardStore.payments"
+        :columns="periodPaymentColumns"
+        :loading="paymentsLoading"
+      >
+        <template #cell-customer="{ row }">
+          <router-link :to="{ path: `payments/${row.data.id}/view` }" class="font-medium text-primary-500">
+            {{ row.data.customer.name }}
+          </router-link>
+        </template>
+        <template #cell-amount="{ row }">
+          <BaseFormatMoney :amount="row.data.amount" :currency="row.data.customer.currency" />
+        </template>
+      </BaseTable>
+      <BaseTablePagination
+        :pagination="dashboardStore.paymentPagination"
+        @pageChange="loadPaymentPage"
+      />
+    </div>
   </div>
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useDashboardStore } from '@/scripts/admin/stores/dashboard'
 import { useI18n } from 'vue-i18n'
 import { useUserStore } from '@/scripts/admin/stores/user'
 import abilities from '@/scripts/admin/stub/abilities'
 import InvoiceDropdown from '@/scripts/admin/components/dropdowns/InvoiceIndexDropdown.vue'
 import EstimateDropdown from '@/scripts/admin/components/dropdowns/EstimateIndexDropdown.vue'
+import BaseTablePagination from '@/scripts/components/base/base-table/BaseTablePagination.vue'
+import BasePaidStatusBadge from '@/scripts/components/base/BasePaidStatusBadge.vue'
 
 const dashboardStore = useDashboardStore()
 
@@ -119,52 +190,71 @@ const userStore = useUserStore()
 
 const invoiceTableComponent = ref(null)
 const estimateTableComponent = ref(null)
+const invoicesLoading = ref(false)
+const paymentsLoading = ref(false)
 
-const dueInvoiceColumns = computed(() => {
-  return [
-    {
-      key: 'formattedDueDate',
-      label: t('dashboard.recent_invoices_card.due_on'),
-    },
-    {
-      key: 'user',
-      label: t('dashboard.recent_invoices_card.customer'),
-    },
-    {
-      key: 'due_amount',
-      label: t('dashboard.recent_invoices_card.amount_due'),
-    },
-    {
-      key: 'actions',
-      tdClass: 'text-right text-sm font-medium pl-0',
-      thClass: 'text-right pl-0',
-      sortable: false,
-    },
-  ]
+const periodLabel = computed(() => {
+  const { from_date, to_date } = dashboardStore.dateRange
+  if (!from_date || !to_date) return ''
+  return `${from_date} – ${to_date}`
 })
 
-const recentEstimateColumns = computed(() => {
-  return [
-    {
-      key: 'formattedEstimateDate',
-      label: t('dashboard.recent_estimate_card.date'),
-    },
-    {
-      key: 'user',
-      label: t('dashboard.recent_estimate_card.customer'),
-    },
-    {
-      key: 'total',
-      label: t('dashboard.recent_estimate_card.amount_due'),
-    },
-    {
-      key: 'actions',
-      tdClass: 'text-right text-sm font-medium pl-0',
-      thClass: 'text-right pl-0',
-      sortable: false,
-    },
-  ]
-})
+watch(
+  () => dashboardStore.dateRange,
+  async (val) => {
+    if (!val?.from_date) return
+    invoicesLoading.value = true
+    paymentsLoading.value = true
+    await Promise.all([
+      dashboardStore.fetchDashboardInvoices(1),
+      dashboardStore.fetchDashboardPayments(1),
+    ])
+    invoicesLoading.value = false
+    paymentsLoading.value = false
+  },
+  { deep: true }
+)
+
+async function loadInvoicePage(page) {
+  invoicesLoading.value = true
+  await dashboardStore.fetchDashboardInvoices(page)
+  invoicesLoading.value = false
+}
+
+async function loadPaymentPage(page) {
+  paymentsLoading.value = true
+  await dashboardStore.fetchDashboardPayments(page)
+  paymentsLoading.value = false
+}
+
+const dueInvoiceColumns = computed(() => [
+  { key: 'formattedDueDate', label: t('dashboard.recent_invoices_card.due_on') },
+  { key: 'user', label: t('dashboard.recent_invoices_card.customer') },
+  { key: 'due_amount', label: t('dashboard.recent_invoices_card.amount_due') },
+  { key: 'actions', tdClass: 'text-right text-sm font-medium pl-0', thClass: 'text-right pl-0', sortable: false },
+])
+
+const recentEstimateColumns = computed(() => [
+  { key: 'formattedEstimateDate', label: t('dashboard.recent_estimate_card.date') },
+  { key: 'user', label: t('dashboard.recent_estimate_card.customer') },
+  { key: 'total', label: t('dashboard.recent_estimate_card.amount_due') },
+  { key: 'actions', tdClass: 'text-right text-sm font-medium pl-0', thClass: 'text-right pl-0', sortable: false },
+])
+
+const periodInvoiceColumns = computed(() => [
+  { key: 'formatted_invoice_date', label: t('invoices.date') },
+  { key: 'invoice_number', label: t('invoices.number') },
+  { key: 'customer', label: t('invoices.customer') },
+  { key: 'total', label: t('invoices.total') },
+  { key: 'status', label: t('invoices.status') },
+])
+
+const periodPaymentColumns = computed(() => [
+  { key: 'formatted_payment_date', label: t('payments.date') },
+  { key: 'payment_number', label: t('payments.payment_number') },
+  { key: 'customer', label: t('payments.customer') },
+  { key: 'amount', label: t('payments.amount') },
+])
 
 function hasAtleastOneInvoiceAbility() {
   return userStore.hasAbilities([
