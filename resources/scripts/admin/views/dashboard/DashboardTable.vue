@@ -147,7 +147,7 @@
           {{ $t('payments.title') }} ({{ periodLabel }})
         </h6>
         <BaseButton size="sm" variant="primary-outline" @click="$router.push('/admin/payments')">
-          {{ $t('general.view_all') }}
+          {{ $t('dashboard.recent_invoices_card.view_all') }}
         </BaseButton>
       </div>
       <BaseTable
