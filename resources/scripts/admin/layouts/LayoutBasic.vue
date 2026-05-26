@@ -29,6 +29,7 @@ import { useUserStore } from '@/scripts/admin/stores/user'
 import { useModalStore } from '@/scripts/stores/modal'
 import { useExchangeRateStore } from '@/scripts/admin/stores/exchange-rate'
 import { useCompanyStore } from '@/scripts/admin/stores/company'
+import { useDarkMode } from '@/scripts/composables/useDarkMode'
 
 import SiteHeader from '@/scripts/admin/layouts/partials/TheSiteHeader.vue'
 import SiteSidebar from '@/scripts/admin/layouts/partials/TheSiteSidebar.vue'
@@ -43,6 +44,9 @@ const modalStore = useModalStore()
 const { t } = useI18n()
 const exchangeRateStore = useExchangeRateStore()
 const companyStore = useCompanyStore()
+
+// Initialize dark mode
+useDarkMode()
 
 const isAppLoaded = computed(() => {
   return globalStore.isAppLoaded

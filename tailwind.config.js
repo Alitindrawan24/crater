@@ -14,6 +14,7 @@ function withOpacityValue(cssVariable) {
 }
 
 module.exports = {
+  darkMode: 'class',
   content: [
     './resources/views/**/*.php',
     './resources/scripts/**/*.js',
